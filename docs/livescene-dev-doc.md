@@ -354,3 +354,92 @@ export type Space = {
 ---
 
 > 备注：本开发文档与《PRD + 方案蓝本》配套使用；如需 Postman 集合 / OpenAPI 完整 YAML / Supabase seed 脚本，可在需求单中勾选。
+
+---
+
+# O. Go/No-Go 验收清单（MVP · 10 条）
+
+> 用于发布前评审；全项通过才 Go。每条含范围/步骤/通过标准/证据。评审人打钩并附截图或链接。
+
+1. **向导 4 步可闭环（美妆 · MZ-001）**
+
+   - 步骤：`首页 → MZ-001 → 一键适配 → Step1–4` 生成结果
+   - 通过：4 步无致命报错；结果页出现 6 张卡片（脚本/灯光/相机/音频/BOM/合规）
+   - 证据：结果页 URL + 截图
+
+2. **向导 4 步可闭环（服饰 · FS-001）**
+
+   - 同上；更换模板 FS-001，空间 = 8 ㎡，预算 = 低
+   - 通过：结果对象内 `shot.length ≥ 3`，并含“衣物细节”关键词
+
+3. **向导 4 步可闭环（数码 · 3C-001）**
+
+   - 同上；模板 3C-001，统一色调 = 6000K 高对比
+   - 通过：相机参数含 `WB = 6000K` 与 `1/50`
+
+4. **设备映射失败 → 回退方案**
+
+   - 步骤：库存仅有 `RGB LED 5m`，移除主光，运行生成
+   - 通过：出现 `E_MAP_406` 提示；结果页显示“未匹配清单 + 替代表”，可一键加入 BOM
+
+5. **预算器**
+
+   - 步骤：区域 = A（1.25/1.15），总额 = 3000，切换买 vs 租
+   - 通过：总价随系数/买租变化；导出的 CSV 合计与 UI 一致（±1 元内）
+
+6. **导出 PDF**
+
+   - 步骤：结果页 → 导出 PDF
+   - 通过：PDF 含目录与 6 节内容；中文字体正常；二维码可扫至落地页
+
+7. **导出 CSV-BOM**
+
+   - 步骤：结果页 → 导出 CSV
+   - 通过：UTF-8（含 BOM）；金额汇总正确；列头与字段字典一致
+
+8. **导出 Prompt ZIP**
+
+   - 步骤：结果页 → 导出 ZIP
+   - 通过：结构 = `global.txt + shots/*.txt + refs/color_palette.png + readme.md`
+
+9. **项目保存 & 评论 @**
+
+   - 步骤：保存结果为项目 → 评论 @ 测试账号“导演”
+   - 通过：导演账号可收到并查看项目；RLS 不允许访客查看
+
+10. **埋点漏斗**
+
+    - 步骤：走完 3 条 happy-path
+    - 通过：仪表盘显示 `start_wizard → complete_step → generate_success → export` 全链路事件；`generate_success` 的 `has_inventory` 正确
+
+> 评审结论：**Go / No-Go**（圈选）
+
+---
+
+# P. Playwright E2E 用例骨架
+
+> 三条 happy-path + 一条错误映射回退；可直接在 CI 跑。默认使用 `.env` 注入 baseURL 与测试账号。
+
+## P1. 目录结构
+
+```
+/e2e
+  ├─ tests
+  │   ├─ happy-makeup.spec.ts
+  │   ├─ happy-fashion.spec.ts
+  │   ├─ happy-3c.spec.ts
+  │   └─ mapping-fallback.spec.ts
+  ├─ fixtures
+  │   └─ auth.ts
+  ├─ playwright.config.ts
+  └─ README.md
+```
+
+## P2. 关键约定
+
+- `.env`：`E2E_BASE_URL`、`E2E_EMAIL_OWNER`、`E2E_PASSWORD_OWNER` 等。
+- 登录统一走 `fixtures/auth.ts`。
+- 选择模板依赖测试数据：`MZ-001 / FS-001 / 3C-001` 已在 seed 中。
+
+---
+
